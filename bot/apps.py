@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class SantaSecretBotConfig(AppConfig):
+class BotConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'santa_secret_bot'
+    name = 'bot'
