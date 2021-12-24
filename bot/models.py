@@ -33,7 +33,7 @@ class Game(models.Model):
                                     verbose_name='Игра закончена')
 
     def __str__(self):
-        return f'Игра {self.pk} - {self.title}, владелец {self.owner}'
+        return f'Игра {self.pk}, Название: {self.title}, Владелец: {self.owner}'
 
     class Meta:
         verbose_name = 'Игра'
