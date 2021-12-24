@@ -18,6 +18,8 @@ def santas_distribution(game_number):
                 break
         santas.remove(random_santa)
 
+    players[0].game.is_finish = True
+
 
 class Command(BaseCommand):
     help = 'Telegram Bot Santa Secret'
