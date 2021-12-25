@@ -15,8 +15,12 @@ def santas_distribution(game_number):
             random_santa = random.choice(santas)
             if random_santa.player is not player.player and random_santa.santa is not player.player:
                 player.santa = random_santa.player
+                player.save()
                 break
         santas.remove(random_santa)
+
+    if PlayersInGame.objects.filter(game=game_number, santas=None):
+        santas_distribution(game_number)
 
     players[0].game.is_finish = True
 
