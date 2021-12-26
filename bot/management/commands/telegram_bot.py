@@ -19,7 +19,7 @@ def santas_distribution(game_number):
                 break
         santas.remove(random_santa)
 
-    if PlayersInGame.objects.filter(game=game_number, santas=None):
+    if PlayersInGame.objects.filter(game=game_number, santa=None):
         santas_distribution(game_number)
 
     players[0].game.is_finish = True
