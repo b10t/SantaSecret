@@ -132,21 +132,6 @@ def send_invitation_link(update: Update, context: CallbackContext):
     return ConversationHandler.END
 
 
-def start_handler(update: Update, context: CallbackContext):
-    inl_keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton('🎅🏼 Создать игру 🎄',
-                               callback_data='CREATE_GAME')]]
-    )
-
-    update.message.reply_text(
-        '🎁 Организуй тайный обмен подарками, \n'
-        'запусти праздничное настроение\! 🎁',
-        parse_mode=ParseMode.MARKDOWN_V2,
-        reply_markup=inl_keyboard
-    )
-    return 'callback_create_game'
-
-
 def cancel(update: Update, context: CallbackContext) -> int:
     """Cancel and end the conversation."""
     update.message.reply_text(
