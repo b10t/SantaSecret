@@ -26,8 +26,8 @@ class Game(models.Model):
         related_name='owner'
     )
     cash_limit = models.CharField('Бюджет', default='0', max_length=25)
-    stop_registration_date = models.DateTimeField('Окончание регистрации')
-    sending_gift_date = models.DateField('Дата отправки подарков')
+    stop_registration_date = models.TextField('Окончание регистрации')
+    sending_gift_date = models.TextField('Дата отправки подарков')
     is_finish = models.BooleanField(default=False, blank=False,
                                     db_index=True,
                                     verbose_name='Игра закончена')
