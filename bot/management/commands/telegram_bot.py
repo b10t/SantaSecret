@@ -146,6 +146,15 @@ def get_dispatch_date(update: Update, context: CallbackContext):
 
 
 def send_invitation_link(update: Update, context: CallbackContext):
+    player = Player.objects.get(chat_id=update.message.chat_id)
+    Game.objects.create(
+        title=context.user_data['game_name'],
+        owner=player,
+        cash_limit=context.user_data['cost_gift'],
+        stop_registration_date=context.user_data['registration_period'],
+        sending_gift_date=context.user_data['dispatch_date']
+    )
+    
     update.effective_message.reply_text(
         'Отлично, Тайный Санта уже готовится к раздаче подарков\!',
         parse_mode=ParseMode.MARKDOWN_V2,
