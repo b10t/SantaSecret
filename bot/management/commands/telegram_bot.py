@@ -10,7 +10,8 @@ from telegram.ext import (CallbackContext, CallbackQueryHandler,
                           CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
 
-# 🎅🏼🎄💸💵💴💶💷💰🎊🎉✉️📨💌📅📆🗓🎁
+load_dotenv()
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 
 def start_handler(update: Update, context: CallbackContext):
@@ -163,10 +164,6 @@ class Command(BaseCommand):
     help = 'Telegram Bot Santa Secret'
 
     def handle(self, *args, **options):
-        load_dotenv()
-        # mode = os.getenv('MODE', 'dev')
-        TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-
         updater = Updater(token=TELEGRAM_TOKEN)
 
         dispatcher = updater.dispatcher
