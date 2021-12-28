@@ -164,10 +164,11 @@ class Command(BaseCommand):
     help = 'Telegram Bot Santa Secret'
 
     def handle(self, *args, **options):
+        print('Start Telegram Bot')
+        print('TELEGRAM_TOKEN', TELEGRAM_TOKEN)
         updater = Updater(token=TELEGRAM_TOKEN)
 
         dispatcher = updater.dispatcher
-        # dispatcher.add_handler(CommandHandler('start', start_handler))
 
         conversation = ConversationHandler(
             entry_points=[CommandHandler('start', start_handler)],
