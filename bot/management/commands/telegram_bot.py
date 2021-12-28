@@ -5,7 +5,7 @@ from bot.models import Game, Player, PlayersInGame
 from django.core.management.base import BaseCommand
 from dotenv import load_dotenv
 from telegram import (ForceReply, InlineKeyboardButton, InlineKeyboardMarkup,
-                      ParseMode, ReplyKeyboardRemove, Update, chat)
+                      ParseMode, ReplyKeyboardRemove, Update)
 from telegram.ext import (CallbackContext, CallbackQueryHandler,
                           CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
@@ -154,7 +154,7 @@ def send_invitation_link(update: Update, context: CallbackContext):
         stop_registration_date=context.user_data['registration_period'],
         sending_gift_date=context.user_data['dispatch_date']
     )
-    
+
     update.effective_message.reply_text(
         'Отлично, Тайный Санта уже готовится к раздаче подарков\!',
         parse_mode=ParseMode.MARKDOWN_V2,
