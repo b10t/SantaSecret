@@ -5,10 +5,12 @@ from bot.models import Game, Player, PlayersInGame
 from django.core.management.base import BaseCommand
 from dotenv import load_dotenv
 from telegram import (ForceReply, InlineKeyboardButton, InlineKeyboardMarkup,
-                      ParseMode, ReplyKeyboardRemove, Update)
+                      ParseMode, ReplyKeyboardRemove, Update, chat)
 from telegram.ext import (CallbackContext, CallbackQueryHandler,
                           CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
+from telegram.utils import helpers
+
 
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
@@ -19,8 +21,20 @@ def start_handler(update: Update, context: CallbackContext):
     # после исправления проблемы с телефоном
 
     inl_keyboard = InlineKeyboardMarkup(
-        [[InlineKeyboardButton('🎅🏼 Создать игру 🎄',
-                               callback_data='CREATE_GAME')]]
+        [
+            [
+                InlineKeyboardButton(
+                    '🎅🏼 Создать игру 🎄',
+                    callback_data='CREATE_GAME'
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    '🎅🏼 Присоедениться к игре 🎄',
+                    callback_data='JOIN_THE_GAME'
+                )
+            ]
+        ]
     )
 
     user_id = update.message.chat_id
@@ -56,8 +70,51 @@ def callback_create_game(update: Update, context: CallbackContext):
 
     if query.data == 'CREATE_GAME':
         return send_gamename_question(update, context)
+    elif query.data == 'JOIN_THE_GAME':
+        return choose_game(update, context)
     else:
         return ConversationHandler.END
+
+
+def choose_game(update: Update, context: CallbackContext):
+    update.effective_message.reply_text(
+        'Введите номер игры',
+        reply_markup=ForceReply(force_reply=True,
+                                input_field_placeholder='Номер...',
+                                selective=True)
+    )
+    return 'join_the_game'
+
+
+def join_the_game(update: Update, context: CallbackContext):
+
+    inl_keyboard = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    '🎅🏼 Создать игру 🎄',
+                    callback_data='CREATE_GAME'
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    '🎅🏼 Присоедениться к игре 🎄',
+                    callback_data='JOIN_THE_GAME'
+                )
+            ]
+        ]
+    )
+
+    number = update.message.text
+
+    player = Player.objects.get(chat_id=context.user_data['user_id'])
+    current_game = Game.objects.get(pk=number)
+    PlayersInGame.objects.create(game=current_game, player=player)
+    
+    update.message.reply_text(
+        f'Игрок {player.firs_name} присоединился к игре {current_game}',
+    )
+    return start_handler(update, context)
 
 
 def send_gamename_question(update: Update, context: CallbackContext):
@@ -109,7 +166,7 @@ def send_registration_period_question(update: Update,
             [InlineKeyboardButton(
                 '📆 до 25.12.2021', callback_data='25.12.2021')],
             [InlineKeyboardButton(
-                '📆 до 31.12.2021', callback_data='31.12.2021')],
+                '📆 до 31.12.2021', callback_data=' 2021-12-31 12:00')],
         ]
     )
     update.effective_message.reply_text(
@@ -146,6 +203,7 @@ def get_dispatch_date(update: Update, context: CallbackContext):
 
 
 def send_invitation_link(update: Update, context: CallbackContext):
+    bot = context.bot
     player = Player.objects.get(chat_id=update.message.chat_id)
     Game.objects.create(
         title=context.user_data['game_name'],
@@ -155,8 +213,11 @@ def send_invitation_link(update: Update, context: CallbackContext):
         sending_gift_date=context.user_data['dispatch_date']
     )
 
+    last_game = Game.objects.last()
+
     update.effective_message.reply_text(
-        'Отлично, Тайный Санта уже готовится к раздаче подарков\!',
+        'Отлично, Тайный Санта уже готовится к раздаче подарков\!\n\n'
+        f'Скажи друзьям номер игры, что бы они могли присоединится {last_game.pk}',
         parse_mode=ParseMode.MARKDOWN_V2,
         reply_markup=ReplyKeyboardRemove()
     )
@@ -206,6 +267,12 @@ class Command(BaseCommand):
                 'callback_create_game': [
                     CallbackQueryHandler(
                         callback_create_game
+                    )
+                ],
+                'join_the_game': [
+                    MessageHandler(
+                        Filters.text & ~Filters.command,
+                        join_the_game
                     )
                 ],
                 'get_game_name': [
