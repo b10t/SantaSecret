@@ -5,11 +5,11 @@ class Player(models.Model):
     firs_name = models.CharField('Имя', max_length=250)
     last_name = models.CharField('Фамилия', max_length=250, blank=True)
     chat_id = models.IntegerField('Chat id', unique=True)
-    phone = models.CharField('Номер телефона', max_length=20, unique=True)
+    phone = models.CharField('Номер телефона', max_length=20, blank=True)
     mail = models.CharField('Электронная почта', max_length=250, blank=True)
 
     def __str__(self):
-        return f'{self.firs_name} {self.last_name} {self.phone}'
+        return f'ID: {self.chat_id} имя: {self.firs_name} телефон: {self.phone}'
 
     class Meta:
         verbose_name = 'Игрок'

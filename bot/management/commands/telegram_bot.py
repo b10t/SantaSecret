@@ -5,100 +5,42 @@ from bot.models import Game, Player, PlayersInGame
 from django.core.management.base import BaseCommand
 from dotenv import load_dotenv
 from telegram import (ForceReply, InlineKeyboardButton, InlineKeyboardMarkup,
-                      ParseMode, ReplyKeyboardRemove, ReplyKeyboardMarkup,
-                      Update,
-                      KeyboardButton)
+                      ParseMode, ReplyKeyboardRemove, Update, chat)
 from telegram.ext import (CallbackContext, CallbackQueryHandler,
                           CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
 
-
-# 🎅🏼🎄💸💵💴💶💷💰🎊🎉✉️📨💌📅📆🗓🎁
+load_dotenv()
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 
 def start_handler(update: Update, context: CallbackContext):
-    SEND_CONTACT_KEYBOARD = ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton('Ручной ввод'),
-                KeyboardButton('Отправить контакт', request_contact=True)
-            ]
-        ],
-        resize_keyboard=True
-    )
-
-    message = update.message
-    user_name = message.chat.first_name
-    user_id = message.chat_id
-    context.user_data['user_id'] = user_id
-    # Если пользователь в базе пропустить этот шаг
-    database_user_id = Player.objects.filter(chat_id=user_id)
-    if not database_user_id:
-        update.message.reply_text(
-            f"Привет, {user_name}!🤚\n\n"
-            "Для участия в игре необходимо указать контактный номер телефона.",
-            reply_markup=SEND_CONTACT_KEYBOARD,
-        )
-        return "ask_contact"
-    else:
-        inl_keyboard = InlineKeyboardMarkup(
-            [[InlineKeyboardButton('🎅🏼 Создать игру 🎄',
-                                   callback_data='CREATE_GAME')]]
-        )
-
-        update.message.reply_text(
-            '🎁 Организуй тайный обмен подарками, \n'
-            'запусти праздничное настроение! 🎁',
-            reply_markup=inl_keyboard,
-        )
-        return 'callback_create_game'
-
-
-def ask_contact(update, context):
-    message = update.message
-    user_id = message.chat_id
-    if message.contact:
-        phone = message.contact.phone_number
-        context.user_data['phone'] = phone
-        update.message.reply_text(
-            f'Контактный номер {phone} сохранен\n\n',
-            reply_markup=ReplyKeyboardRemove()
-        )
-
-        inl_keyboard = InlineKeyboardMarkup(
-            [[InlineKeyboardButton('🎅🏼 Создать игру 🎄',
-                                   callback_data='CREATE_GAME')]]
-        )
-
-        update.message.reply_text(
-            '🎁 Организуй тайный обмен подарками, \n'
-            'запусти праздничное настроение 🎁',
-            reply_markup=inl_keyboard
-        )
-        return 'callback_create_game'
-
-    elif message.text == "Ручной ввод":
-        update.message.reply_text(
-            'Введите номер телефона в формате +71231231212',
-            reply_markup=ReplyKeyboardRemove(),
-        )
-        return 'save_phone_number'
-
-
-def save_phone_number(update, context):
-    phone = update.message.text
-    context.user_data['phone'] = phone
-    update.message.reply_text(
-        f'Контактный номер {phone} сохранен\n\n',
-        reply_markup=ReplyKeyboardRemove()
-    )
+    # TODO изменить поле phone в модели Player
+    # после исправления проблемы с телефоном
 
     inl_keyboard = InlineKeyboardMarkup(
         [[InlineKeyboardButton('🎅🏼 Создать игру 🎄',
                                callback_data='CREATE_GAME')]]
     )
 
+    user_id = update.message.chat_id
+    context.user_data['user_id'] = user_id
+    first_name = update.message.chat.first_name
+    if update.message.chat.last_name:
+        context.user_data['last_name'] = update.message.chat.last_name
+    else:
+        context.user_data['last_name'] = ''
+
+    database_user_id = Player.objects.filter(chat_id=user_id)
+    if not database_user_id:
+        Player.objects.create(
+            chat_id=user_id,
+            firs_name=first_name,
+            last_name=context.user_data['last_name'],
+        )
+
     update.message.reply_text(
+        f'Привет, {first_name}'
         '🎁 Организуй тайный обмен подарками, \n'
         'запусти праздничное настроение\! 🎁',
         parse_mode=ParseMode.MARKDOWN_V2,
@@ -119,15 +61,7 @@ def callback_create_game(update: Update, context: CallbackContext):
 
 
 def send_gamename_question(update: Update, context: CallbackContext):
-    # message = update.message
-    # user_id = message.chat_id
-    # player, _ = Player.objects.get_or_create(chat_id=user_id, defaults={
-    #     "first_name": message.chat.first_name,
-    #     "last_name": message.chat.last_name,
-    #     "phone": context.user_data['phone'],
-    # })
-    context.user_data['phone'] = update.message.text
-    update.message.reply_text(
+    update.effective_message.reply_text(
         'Введите название игры:',
         reply_markup=ForceReply(force_reply=True,
                                 input_field_placeholder='Название игры...',
@@ -138,7 +72,6 @@ def send_gamename_question(update: Update, context: CallbackContext):
 
 def get_game_name(update: Update, context: CallbackContext):
     context.user_data['game_name'] = update.message.text
-
     return send_cost_gift_question(update, context)
 
 
@@ -213,16 +146,8 @@ def get_dispatch_date(update: Update, context: CallbackContext):
 
 
 def send_invitation_link(update: Update, context: CallbackContext):
-    player = Player.objects.get(chat_id=update.message.chat_id)
-    Game.objects.create(
-        title=context.user_data['game_name'],
-        owner=player,
-        cash_limit=context.user_data['cost_gift'],
-        stop_registration_date=context.user_data['registration_period'],
-        sending_gift_date=context.user_data['dispatch_date']
-    )
     update.effective_message.reply_text(
-        'Отлично, Тайный Санта уже готовится к раздаче подарков!',
+        'Отлично, Тайный Санта уже готовится к раздаче подарков\!',
         parse_mode=ParseMode.MARKDOWN_V2,
         reply_markup=ReplyKeyboardRemove()
     )
@@ -260,28 +185,15 @@ class Command(BaseCommand):
     help = 'Telegram Bot Santa Secret'
 
     def handle(self, *args, **options):
-        load_dotenv()
-        # mode = os.getenv('MODE', 'dev')
-        TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
-
+        print('Start Telegram Bot')
+        print('TELEGRAM_TOKEN', TELEGRAM_TOKEN)
         updater = Updater(token=TELEGRAM_TOKEN)
 
         dispatcher = updater.dispatcher
-        # dispatcher.add_handler(CommandHandler('start', start_handler))
 
         conversation = ConversationHandler(
             entry_points=[CommandHandler('start', start_handler)],
             states={
-                'ask_contact': [
-                    MessageHandler(
-                        Filters.all & ~Filters.command, ask_contact,
-                    )
-                ],
-                'save_phone_number': [
-                    MessageHandler(
-                        Filters.text & ~Filters.command, save_phone_number,
-                    )
-                ],
                 'callback_create_game': [
                     CallbackQueryHandler(
                         callback_create_game
